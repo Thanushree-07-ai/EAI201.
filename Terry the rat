@@ -1,0 +1,166 @@
+from collections import deque
+import heapq
+
+
+# ---------------- GRAPH CONSTRUCTION ----------------
+# Input: number of junctions (nodes) and pipes (edges)
+n = int(input("Enter number of junctions: "))
+e = int(input("Enter number of pipes: "))
+
+# Graph is stored as an adjacency list { node: [(neighbor, cost), ...] }
+graph = {i: [] for i in range(n)}
+
+# Reading edges (pipes) with travel cost
+for _ in range(e):
+    a, b, cost = map(int, input("Enter two junctions and travel cost (e.g. 0 1 3): ").split())
+    # Undirected graph: add edge in both directions
+    graph[a].append((b, cost))
+    graph[b].append((a, cost))
+
+# Source and destination input
+start = int(input("Enter starting junction: "))
+end = int(input("Enter target junction (cheese): "))
+
+
+# ---------------- CONNECTIVITY CHECK ----------------
+def is_connected(graph, start, end):
+    """Check if start and end are connected using BFS traversal"""
+    queue = deque([start])
+    visited = set([start])  # Mark start as visited when enqueueing
+    while queue:
+        node = queue.popleft()
+        if node == end:  # If target is found
+            return True
+        for neighbor, _ in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+    return False
+
+
+# ---------------- DEPTH FIRST SEARCH (DFS) ----------------
+def dfs(start, end):
+    """
+    Perform DFS using a stack.
+    Returns (path taken, order of visited nodes).
+    """
+    stack = [(start, [start])]  # store (node, path till now)
+    visited = set([start])  # Mark start as visited when pushing to stack
+    visit_order = []
+
+    while stack:
+        node, path = stack.pop()  # LIFO: last in, first out
+        visit_order.append(node)
+
+        # If found target, return
+        if node == end:
+            return path, visit_order
+
+        # Add unvisited neighbors to stack
+        for neighbor, _ in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                stack.append((neighbor, path + [neighbor]))
+
+    return None, visit_order
+
+
+# ---------------- BREADTH FIRST SEARCH (BFS) ----------------
+def bfs(start, end):
+    """
+    Perform BFS using a queue.
+    Returns (shortest path in terms of edges, order of visited nodes).
+    """
+    queue = deque([(start, [start])])  # store (node, path till now)
+    visited = set([start])  # Mark start as visited when enqueueing
+    visit_order = []
+
+    while queue:
+        node, path = queue.popleft()  # FIFO: first in, first out
+        visit_order.append(node)
+
+        # If found target, return
+        if node == end:
+            return path, visit_order
+
+        # Add unvisited neighbors to queue
+        for neighbor, _ in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append((neighbor, path + [neighbor]))
+
+    return None, visit_order
+
+
+# ---------------- DIJKSTRA'S ALGORITHM ----------------
+def dijkstra(start, end):
+    """
+    Perform Dijkstra's algorithm for least-cost path.
+    Returns (path taken, total cost, order of visited nodes).
+    """
+    heap = [(0, start, [start])]  # (cost_so_far, node, path_so_far)
+    visited = set()
+    visit_order = []
+
+    while heap:
+        cost, node, path = heapq.heappop(heap)  # pick node with least cost
+        if node in visited:
+            continue
+        visited.add(node)
+        visit_order.append(node)
+
+        # If reached destination, return
+        if node == end:
+            return path, cost, visit_order
+
+        # Explore neighbors and update their costs
+        for neighbor, weight in graph[node]:
+            if neighbor not in visited:
+                heapq.heappush(heap, (cost + weight, neighbor, path + [neighbor]))
+
+    return None, float('inf'), visit_order
+
+
+# ---------------- FINAL OUTPUT ----------------
+if not is_connected(graph, start, end):
+    print("\nNo path found: The graph is disconnected or there is no path between the nodes.\n")
+else:
+    # DFS Traversal
+    dfs_path, dfs_visit_order = dfs(start, end)
+    print("\nDFS path:", dfs_path)
+    print("DFS visit order:", dfs_visit_order)
+    print("Junctions visited (DFS):", len(dfs_visit_order) if dfs_visit_order else 0)
+
+    # BFS Traversal
+    bfs_path, bfs_visit_order = bfs(start, end)
+    print("\nBFS path:", bfs_path)
+    print("BFS visit order:", bfs_visit_order)
+    print("Junctions visited (BFS):", len(bfs_visit_order) if bfs_visit_order else 0)
+
+    # Dijkstra’s Algorithm
+    dijkstra_path, dijkstra_cost, dijkstra_visit_order = dijkstra(start, end)
+    print("\nLeast cost path (Dijkstra):", dijkstra_path)
+    print("Dijkstra visit order:", dijkstra_visit_order)
+    print("Total cost (Dijkstra):", dijkstra_cost)
+    print("Junctions visited (Dijkstra):", len(dijkstra_visit_order) if dijkstra_visit_order else 0)
+
+
+Sample output
+
+Enter number of junctions: 6
+Enter number of pipes: 7
+Enter two junctions and travel cost (e.g. 0 1 3): 0 1 2
+Enter two junctions and travel cost (e.g. 0 1 3): 0 2 4  
+Enter two junctions and travel cost (e.g. 0 1 3): 1 2 1  
+Enter two junctions and travel cost (e.g. 0 1 3): 1 3 7  
+Enter two junctions and travel cost (e.g. 0 1 3): 2 4 3  
+Enter two junctions and travel cost (e.g. 0 1 3): 3 5 1  
+Enter two junctions and travel cost (e.g. 0 1 3): 4 5 5  
+Enter starting junction: 0
+, 1, 2, 3, 4, 5]
+Junctions visited (BFS): 6
+
+Least cost path (Dijkstra): [0, 1, 3, 5]
+Dijkstra visit order: [0, 1, 2, 4, 3, 5]
+Total cost (Dijkstra): 10
+Junctions visited (Dijkstra): 6
